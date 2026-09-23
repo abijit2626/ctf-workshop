@@ -1,0 +1,102 @@
+PROJECT: TinkerHub Study Jam — Web Exploitation & Steganography CTF challenges
+
+CONTEXT
+I'm running a beginner-friendly, gamified security study jam for college students with
+zero prior CTF/security experience. It is NOT a competitive event — no leaderboard
+pressure. The core design goal is that participants figure things out THEMSELVES via a
+tiered hint system, rather than asking an organizer for the answer. Everything you build
+must support that philosophy: every challenge needs 2-3 progressive hints (a conceptual
+nudge, a pointer to the right tool/technique, then a near-solution), not just a flag.
+
+Delivery platform is CTFd (self-hosted, free), running on an isolated lab network with
+no internet access and no connection to any other college system. Two pieces need
+building:
+
+1. A single self-contained, deliberately vulnerable web app for the "Web Exploitation"
+   challenges (see list below). Flask (Python) or Express (Node) is fine — pick whichever
+   lets you implement all challenges most cleanly and stably. It must run via
+   docker-compose with a single command, entirely offline, no external dependencies at
+   runtime.
+2. A set of generated files for the "Steganography" challenges (see list below) — actual
+   image/audio files with real embedded flags, ready to attach to CTFd.
+
+DELIVERABLES
+- /webapp — full source of the vulnerable web app, Dockerized, with a README explaining
+  how to run it and where each challenge's flag is planted in the code (organizer
+  reference, not shown to participants).
+- /stego — generated challenge files (images/audio) + a README explaining how each flag
+  was hidden and how to solve it (organizer reference).
+- /ctfd-import — a CTFd-compatible challenge export/import file (or structured
+  JSON/YAML if the export format isn't feasible) containing: challenge title,
+  category, description/prompt text, point value, the flag, and the 2-3 tiered hints
+  (with hint point-costs) for every challenge below.
+- Top-level README with setup instructions for a non-expert organizer: how to stand up
+  the whole thing on one lab machine, how to point CTFd at the web app, and a checklist
+  for testing everything before the event.
+
+FLAG FORMAT
+Use flag{...} for every challenge, with a distinct, on-theme string per challenge
+(nothing generic like flag{test}).
+
+CHALLENGE LIST — WEB EXPLOITATION (16 total, difficulty ramps in this order)
+Day 1 — Foundations (no tools, then light dev-tools/Burp use):
+ 1. View page source — flag hidden in raw HTML, not visible on rendered page
+ 2. robots.txt / unlinked page — flag on a page not linked anywhere
+ 3. HTML comment — flag inside an HTML comment
+ 4. Inspect element — flag in a display:none / hidden element
+ 5. Client-side JS check — flag sitting in a JS file or console despite a blocking alert
+ 6. Cookie viewing — flag stored directly in a cookie value (read-only)
+ 7. Cookie tampering — edit role=user -> role=admin to reveal the flag
+ 8. Client-side validation bypass — form blocks something in JS only; no server-side
+    check; requires intercepting and resending the request
+
+Day 2 — Real exploitation:
+ 9. Parameter / IDOR tampering — changing user_id=104 to 103 in a request returns
+    someone else's flag
+10. Hidden/disabled field exposure — a flag fragment only sent on a JS event; must be
+    read from the full HTTP response, not the rendered page
+11. SQL injection login bypass — ' OR '1'='1' -- style bypass on a deliberately weak
+    login form, reveals flag on success
+12. Reflected XSS — injecting a script tag triggers something observable that reveals
+    the flag (e.g. an alert with the flag, or exfil to a visible log)
+13. CSRF (bonus) — forging a request performs an action as another logged-in user,
+    revealing a flag
+14. Predictable session tokens (bonus) — session IDs increment or are weakly encoded
+    (e.g. base64 of username:timestamp); deriving another user's session reveals a flag
+15. Insecure file upload (bonus) — bypassing a weak extension check lets you upload
+    something that reveals a flag
+16. Open redirect (bonus) — flag revealed after identifying/exploiting an open
+    redirect endpoint
+
+Also include, as a separate clearly-marked "instructor demo, not a solo challenge":
+a small vulnerable endpoint suitable for a live padding oracle attack walkthrough
+(CBC encryption with a naive padding-error response), with a written script an
+organizer can follow to demo it live.
+
+CHALLENGE LIST — STEGANOGRAPHY (9 total, difficulty ramps in this order)
+ 1. strings on an image — flag as plain text inside the image's binary data
+ 2. Metadata (EXIF) — flag hidden in an EXIF comment/author field
+ 3. Extension mismatch — file is actually a different format, renamed; `file` command
+    reveals it
+ 4. Hex editor / file signature — flag appended after the image's real EOF marker
+ 5. Basic LSB steganography — flag extractable via a simple LSB decode tool
+ 6. Carving with binwalk — a hidden zip/file is embedded inside an image, extractable
+    with binwalk
+ 7. QR code in an image — flag encoded as a QR code hidden within a larger image
+ 8. Audio spectrogram — flag visible as a pattern when the audio file is opened in
+    Audacity's spectrogram view
+ 9. Multi-layer chain (capstone) — binwalk carves out a file, which contains a
+    base64-encoded flag
+
+CONSTRAINTS
+- Everything must run fully offline (no external API calls, no CDN dependencies beyond
+  what's vendored) since the event runs on an isolated LAN.
+- Keep the vulnerable web app's vulnerabilities scoped ONLY to what's listed — don't
+  introduce unintended extra vulnerabilities, and don't make it hardened in ways that
+  block the intended challenge behavior.
+- Everything needs to be resettable (a clean restart should reset any stateful
+  challenge, like the file upload one).
+- Write hints for total beginners — assume no prior security vocabulary.
+
+Start by proposing the file/folder structure and the web app's route map before writing
+full code, so I can sanity-check the plan.

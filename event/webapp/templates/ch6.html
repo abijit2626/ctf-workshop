@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Admin Panel</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 40px auto;">
+  <h1>Admin Panel</h1>
+  <p>Your current role: <strong>{{ role }}</strong></p>
+
+  {% if flag %}
+    <p style="color: green;"><strong>Welcome, admin.</strong> {{ flag }}</p>
+  {% else %}
+    <p style="color: red;">Access denied - admin only.</p>
+  {% endif %}
+
+  <p><a href="/">Back home</a></p>
+</body>
+</html>

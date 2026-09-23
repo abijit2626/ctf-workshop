@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title>System Status</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 40px auto;">
+  <h1>System Status</h1>
+  <p>All systems operational.</p>
+  <div id="status-panel"></div>
+
+  <script>
+    // Runs after the page loads and fetches status from the server. Nothing
+    // below is present in this page's static HTML - the flag only exists in
+    // the live DOM after this fetch resolves, so view-source won't show it.
+    window.addEventListener("DOMContentLoaded", function () {
+      fetch("/ch4/api/status")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var secret = document.createElement("div");
+          secret.id = "debug-panel";
+          secret.style.display = "none";
+          secret.textContent = data.debug_message;
+          document.body.appendChild(secret);
+        });
+    });
+  </script>
+
+  <p><a href="/">Back home</a></p>
+</body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  recon:
+    build: ./recon
+    ports:
+      - "2121:2121"
+      - "9200:9200"
+      - "7331:7331"
+
+  webapp:
+    build: ./webapp
+    ports:
+      - "5000:5000"

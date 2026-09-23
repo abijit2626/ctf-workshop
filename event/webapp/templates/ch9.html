@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Search</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 40px auto;">
+  <h1>Search TinkerCorp Docs</h1>
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" size="40">
+    <button type="submit">Search</button>
+  </form>
+
+  <div id="results">
+    {% if q %}
+      <p>Results for: {{ q|safe }}</p>
+      <p>No matches found.</p>
+    {% endif %}
+  </div>
+
+  <p><a href="/">Back home</a></p>
+</body>
+</html>

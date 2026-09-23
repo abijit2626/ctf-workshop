@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>My Profile</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 40px auto;">
+  <h1>My Profile</h1>
+  <p>Viewing profile for user_id = {{ user_id }}</p>
+
+  {% if profile %}
+    <p>Username: <strong>{{ profile.username }}</strong></p>
+    <p>{{ profile.note }}</p>
+    {% if profile.secret %}
+      <p style="color: green;"><strong>{{ profile.secret }}</strong></p>
+    {% endif %}
+  {% else %}
+    <p>No such user.</p>
+  {% endif %}
+
+  <p><a href="/">Back home</a></p>
+</body>
+</html>

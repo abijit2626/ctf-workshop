@@ -1,0 +1,455 @@
+# TinkerHub CTF - Challenge definitions for CTFd
+#
+# 18 challenges across 3 categories. This is a structured reference, not a
+# native CTFd export/import zip (that format is a specific internal database
+# dump tied to a CTFd version, and shipping a wrong one can silently fail to
+# import). With only 18 challenges, the fastest reliable path is entering
+# each one by hand into CTFd's admin UI using this file as the source of
+# truth - budget about 60-90 minutes. If you'd rather script it, CTFd has a
+# REST API (Admin > challenges endpoints) that accepts this same shape of
+# data; ask me and I'll write an import script against it.
+#
+# Field meanings:
+#   category: CTFd challenge category (creates a section in the UI)
+#   value: points awarded for a correct flag
+#   flag: exact string participants submit (type: static, case-sensitive)
+#   hints: ordered list, each with its own unlock cost in points
+
+challenges:
+
+  # ============================== ROUND 1: NETWORK RECON ==============================
+
+  - title: "Diagnostics Port"
+    category: "Network Recon"
+    value: 100
+    flag: "flag{n3tw0rk_r3c0n_1s_ez}"
+    description: |
+      TinkerCorp accidentally left some internal services reachable on the
+      network. Find them, connect, and see what they're leaking.
+
+      Target: `<SERVER_IP>` (see event announcement for the actual address)
+    hints:
+      - cost: 5
+        content: >
+          Computers talk to each other over numbered "doors" called ports.
+          Most services only listen on a handful of them. You need a way to
+          ask "which doors are open?" before you can knock on any of them.
+      - cost: 10
+        content: >
+          The standard tool for this is `nmap`. Try scanning a range of
+          ports on the target, e.g. `nmap -p 2000-9300 <ip>`.
+      - cost: 15
+        content: >
+          Once you find the open ports, connect to each one directly with
+          `nc <ip> <port>` and read what comes back. Two of them are
+          decoys with nothing useful - one of them isn't.
+
+  - title: "Anonymous Drop"
+    category: "Network Recon"
+    value: 100
+    flag: "flag{an0n_ftp_no_p4ssw0rd}"
+    description: |
+      One of the open ports speaks a file-transfer protocol that doesn't
+      require a real password.
+
+      Target: `<SERVER_IP>`, port `2100`
+    hints:
+      - cost: 5
+        content: >
+          Some file servers allow a special "guest" username that skips
+          the need for a real password entirely.
+      - cost: 10
+        content: >
+          Search "anonymous FTP login". The username is literally the word
+          for "nobody" - and any password (even a blank one) is accepted.
+      - cost: 15
+        content: >
+          Connect with `nc <ip> 2100`, then type: `USER anonymous`, then
+          `PASS anything`, then `LIST` to see what files exist, then
+          `RETR <filename>` to have it sent to you.
+
+  - title: "The Secret Phrase"
+    category: "Network Recon"
+    value: 100
+    flag: "flag{s3nd_th3_r1ght_str1ng}"
+    description: |
+      A service on this port is waiting for you to say something specific
+      before it'll talk to you.
+
+      Target: `<SERVER_IP>`, port `4444`
+    hints:
+      - cost: 5
+        content: >
+          Not every network service just hands you data on connect - some
+          expect you to send something back first.
+      - cost: 10
+        content: >
+          Connect with `nc <ip> 4444` and read the prompt carefully. It's
+          telling you exactly what kind of input it wants.
+      - cost: 15
+        content: >
+          The exact phrase (case-sensitive) is two words meaning "please
+          let me in", commonly known from a certain folk tale about a cave.
+          Try: `OPEN SESAME`
+
+  - title: "Wrong Address (stretch)"
+    category: "Network Recon"
+    value: 150
+    flag: "flag{h0st_h34d3r_l34k}"
+    description: |
+      This looks like an ordinary web server, but it responds differently
+      depending on which hostname you claim to be visiting.
+
+      Target: `http://<SERVER_IP>:8080`
+    hints:
+      - cost: 10
+        content: >
+          When your browser (or curl) makes a web request, it tells the
+          server which website it thinks it's talking to, in a header
+          called `Host`. Servers don't always verify this matches reality.
+      - cost: 15
+        content: >
+          Use curl's `-H` flag to send a custom Host header, e.g.
+          `curl -H "Host: something" http://<ip>:8080/`. Try guessing an
+          internal-sounding hostname for a fictional company called
+          TinkerCorp.
+      - cost: 20
+        content: >
+          Try: `curl -H "Host: internal.tinkercorp.lab" http://<ip>:8080/`
+
+  # ============================== ROUND 2: WEB EXPLOITATION ==============================
+
+  - title: "Company Announcements"
+    category: "Web Exploitation"
+    value: 50
+    flag: "flag{v13w_s0urc3_ftw}"
+    description: |
+      This page looks empty. Is it really?
+
+      `http://<SERVER_IP>:5000/ch1`
+    hints:
+      - cost: 3
+        content: >
+          What you see rendered in the browser isn't always everything
+          that got sent to you.
+      - cost: 5
+        content: >
+          Right-click the page and look for "View Page Source" (or press
+          Ctrl+U).
+      - cost: 8
+        content: >
+          Search (Ctrl+F) the source for the text "flag{" - some text on
+          this page is styled to be invisible, not actually removed.
+
+  - title: "Robots Don't Keep Secrets"
+    category: "Web Exploitation"
+    value: 50
+    flag: "flag{r0b0ts_txt_g1v3s_1t_away}"
+    description: |
+      Every well-behaved web crawler checks one particular file before
+      crawling a site. What does TinkerCorp's say?
+
+      `http://<SERVER_IP>:5000/`
+    hints:
+      - cost: 3
+        content: >
+          Websites can publish a file that tells search engines which
+          pages NOT to crawl. That file itself is always public.
+      - cost: 5
+        content: >
+          Try visiting `/robots.txt` on the site.
+      - cost: 8
+        content: >
+          The file lists a "Disallow" path. Visit that exact path directly
+          in your browser - it's a real page, just not linked from
+          anywhere.
+
+  - title: "About Us"
+    category: "Web Exploitation"
+    value: 50
+    flag: "flag{c0mm3nts_ar3nt_s3cr3ts}"
+    description: |
+      Developers leave notes to themselves in places users aren't
+      supposed to look.
+
+      `http://<SERVER_IP>:5000/ch3`
+    hints:
+      - cost: 3
+        content: >
+          HTML has a way for developers to write notes that never render
+          in the browser, but are still delivered to every visitor.
+      - cost: 5
+        content: >
+          These are called HTML comments, written as `<!-- like this -->`.
+          View the page source to find one.
+      - cost: 8
+        content: >
+          Ctrl+U to view source, then Ctrl+F for "flag{".
+
+  - title: "System Status"
+    category: "Web Exploitation"
+    value: 75
+    flag: "flag{1nsp3ct_th3_dom}"
+    description: |
+      The page you see in your browser can change after it finishes
+      loading - and "View Page Source" only shows you the very first
+      version.
+
+      `http://<SERVER_IP>:5000/ch4`
+    hints:
+      - cost: 5
+        content: >
+          JavaScript running in your browser can add, remove, or hide
+          content on a page after it initially loads. "View Page Source"
+          only shows what the server originally sent - not what the page
+          looks like right now.
+      - cost: 8
+        content: >
+          Open your browser's Developer Tools (F12 or right-click ->
+          Inspect) and look at the "Elements" tab, not the page source.
+          It shows the page as it currently exists.
+      - cost: 12
+        content: >
+          Look for an element with `display: none` somewhere in the DOM
+          tree in the Elements panel - it won't be visible on the page,
+          but it's there, and it appeared shortly after the page loaded.
+
+  - title: "Session Info"
+    category: "Web Exploitation"
+    value: 50
+    flag: "flag{c00k13_j4r_s3cr3ts}"
+    description: |
+      This page sets something in your browser to track your visit.
+
+      `http://<SERVER_IP>:5000/ch5`
+    hints:
+      - cost: 3
+        content: >
+          Websites often store small pieces of data in your browser called
+          "cookies" - sometimes containing more than they should.
+      - cost: 5
+        content: >
+          Open Developer Tools -> Application (Chrome) or Storage
+          (Firefox) tab -> Cookies, and look at what this site has stored.
+      - cost: 8
+        content: >
+          You can also just type `document.cookie` into the browser
+          console and press Enter.
+
+  - title: "Admin Panel"
+    category: "Web Exploitation"
+    value: 75
+    flag: "flag{r0l3_fl1p_pr1v_3sc}"
+    description: |
+      This page checks who you are using a cookie. What happens if you
+      change it?
+
+      `http://<SERVER_IP>:5000/ch6`
+    hints:
+      - cost: 5
+        content: >
+          The site decides whether you're an admin based only on a value
+          stored in your own browser - and your browser lets you edit that.
+      - cost: 8
+        content: >
+          Open Developer Tools -> Application/Storage -> Cookies, find a
+          cookie called `role`, and look at its value.
+      - cost: 12
+        content: >
+          Edit the `role` cookie's value from `user` to `admin`, then
+          reload the page.
+
+  - title: "My Profile"
+    category: "Web Exploitation"
+    value: 100
+    flag: "flag{1d0r_us3r_103_pwn3d}"
+    description: |
+      Your profile is at `/ch7/profile?user_id=104`. What happens if you
+      look at someone else's?
+
+      `http://<SERVER_IP>:5000/ch7/profile?user_id=104`
+    hints:
+      - cost: 5
+        content: >
+          The page shows profile data based on a number in the URL. Does
+          the server actually check that the number belongs to you?
+      - cost: 10
+        content: >
+          This bug type is called IDOR (Insecure Direct Object Reference)
+          - the app trusts an ID from the URL without verifying ownership.
+      - cost: 15
+        content: >
+          Try changing `user_id=104` to a nearby number, like `103`, in
+          the URL.
+
+  - title: "Staff Login"
+    category: "Web Exploitation"
+    value: 125
+    flag: "flag{sql1_1s_n3v3r_s4f3}"
+    description: |
+      Log in as `admin` without knowing the password.
+
+      `http://<SERVER_IP>:5000/login`
+    hints:
+      - cost: 8
+        content: >
+          This login form builds a database query directly out of what
+          you type. What if your input changed the *meaning* of the
+          query, not just the value being searched for?
+      - cost: 12
+        content: >
+          Look up "SQL injection" and the classic trick of using a quote
+          character (`'`) to break out of a string, then adding a
+          condition that's always true.
+      - cost: 18
+        content: >
+          Try username: `admin' OR '1'='1' -- ` (note the trailing space)
+          and any password.
+
+  - title: "Search TinkerCorp Docs"
+    category: "Web Exploitation"
+    value: 125
+    flag: "flag{xss_st34ls_c00k13s}"
+    description: |
+      This search box shows your search term back to you on the page.
+      What if your search term was code instead of text?
+
+      `http://<SERVER_IP>:5000/ch9/search`
+    hints:
+      - cost: 8
+        content: >
+          If a website puts your input directly into the page without
+          checking it first, your input can include HTML/JavaScript that
+          the browser will actually run.
+      - cost: 12
+        content: >
+          This is called XSS (Cross-Site Scripting). Try searching for
+          `<script>alert(1)</script>` and see what happens.
+      - cost: 18
+        content: >
+          The flag is sitting in this page's cookies (same technique as
+          the Session Info challenge), but nothing on the page displays
+          it directly. Try a payload that reads and shows
+          `document.cookie`, e.g.
+          `<script>alert(document.cookie)</script>`
+
+  # ============================== ROUND 3: STEGANOGRAPHY ==============================
+
+  - title: "Hidden in Binary"
+    category: "Steganography"
+    value: 50
+    flag: "flag{str1ngs_f1nds_1t}"
+    description: |
+      This image looks completely ordinary. Sometimes the fastest way to
+      find hidden text in a file is to just... look for text in the file.
+
+      File: `01_strings.png`
+    hints:
+      - cost: 3
+        content: >
+          Image files are mostly binary data, but plain readable text can
+          still be tucked in among the bytes.
+      - cost: 5
+        content: >
+          There's a command-line tool literally called `strings` that
+          pulls out all the human-readable text from any file.
+      - cost: 8
+        content: >
+          Run: `strings 01_strings.png | grep flag`
+
+  - title: "Camera Metadata"
+    category: "Steganography"
+    value: 50
+    flag: "flag{ex1f_d4t4_l34ks}"
+    description: |
+      Photos carry more information than just pixels - camera settings,
+      timestamps, sometimes even notes from whoever created the file.
+
+      File: `02_exif.jpg`
+    hints:
+      - cost: 3
+        content: >
+          JPEG photos store extra metadata called EXIF data - things like
+          camera model, date taken, and custom text fields.
+      - cost: 5
+        content: >
+          Use a tool like `exiftool` to view a file's EXIF metadata:
+          `exiftool 02_exif.jpg`
+      - cost: 8
+        content: >
+          Look specifically at the "Artist" and "User Comment" fields in
+          the output.
+
+  - title: "Vacation Photo?"
+    category: "Steganography"
+    value: 75
+    flag: "flag{n0t_4_txt_f1l3}"
+    description: |
+      This file is named like a text note, but something feels off about
+      it.
+
+      File: `03_vacation_photo.txt`
+    hints:
+      - cost: 5
+        content: >
+          A file's extension (the part after the dot) is just a label -
+          it doesn't have to match what's actually inside the file.
+      - cost: 8
+        content: >
+          Use the `file` command to check what a file actually is, based
+          on its contents rather than its name: `file 03_vacation_photo.txt`
+      - cost: 12
+        content: >
+          Once you know its real format, try the same technique as
+          "Hidden in Binary" on it.
+
+  - title: "Pixel Whispers"
+    category: "Steganography"
+    value: 100
+    flag: "flag{ls8_ls_my_f4v0r1t3}"
+    description: |
+      This image looks like a plain color gradient - but every pixel is
+      quietly carrying one extra bit of information.
+
+      File: `04_lsb.png`
+    hints:
+      - cost: 5
+        content: >
+          Some steganography techniques hide data in parts of a file that
+          don't change how it looks - like the very last bit of each
+          color value in every pixel.
+      - cost: 10
+        content: >
+          This is called LSB (Least Significant Bit) steganography. Search
+          for how the lowest bit of each pixel's red/green/blue value can
+          encode hidden text.
+      - cost: 15
+        content: >
+          Write (or find) a script that reads each pixel's R, G, B values,
+          takes the last bit of each, and reassembles those bits 8 at a
+          time into ASCII characters, in pixel order (left to right, top
+          to bottom).
+
+  - title: "Team Offsite Photo (stretch)"
+    category: "Steganography"
+    value: 75
+    flag: "flag{qr_c0d3_sc4n_m3}"
+    description: |
+      A photo from the team offsite. Look closely at the whole image.
+
+      File: `05_team_offsite.png`
+    hints:
+      - cost: 5
+        content: >
+          Not everything hidden in an image needs special tools - sometimes
+          you just need to actually look at the whole picture carefully.
+      - cost: 8
+        content: >
+          There's a small square, scannable pattern somewhere in the
+          image - the same kind you'd scan with a phone camera at a
+          restaurant menu.
+      - cost: 12
+        content: >
+          Crop out the QR code and scan it with any phone QR scanner app,
+          or decode it with a tool/website that reads QR codes from an
+          image file.
