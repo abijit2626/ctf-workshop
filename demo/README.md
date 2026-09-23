@@ -106,18 +106,11 @@ Walk through one challenge's 3-tier hints in `HINTS.md` out loud - this is
 the core pitch: nobody gets stuck asking an organizer, everybody has a path
 forward, and nobody gets the answer handed to them either.
 
-## Notes on how this scales to the full event
+## How this scaled to the full event
 
-This is a deliberately trimmed slice. The full plan (already scoped, not yet
-built) adds:
-- ~4 more recon challenges (ping sweep across decoy hosts, anonymous FTP,
-  HTTP header/vhost leak)
-- ~7 more web challenges (robots.txt, HTML comments, hidden DOM elements,
-  cookie viewing/tampering, IDOR, reflected XSS)
-- ~3-4 more stego challenges (EXIF metadata, extension mismatch via `file`,
-  binwalk carving, QR code)
-- A CTFd bulk-import file (title/category/description/points/flag/hints) so
-  none of this has to be manually re-entered into CTFd
-- A top-level README with a pre-event testing checklist
-
-Say the word and I'll build the rest out using this same structure.
+This was the trimmed slice used to pitch the idea. The full 18-challenge
+event was subsequently built on the same structure and lives in
+[`../event`](../event) — adding the remaining recon, web exploitation and
+steganography challenges, a `ctfd-import/challenges.yml` carrying every
+challenge's description, points, flag and tiered hints, and a pre-event
+testing checklist.
